@@ -1,16 +1,14 @@
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
-
-class Item implements Serializable {
+class Item {
     private static final long serialVersionUID = 42L;
 
     private int nodeID;
     private String productName;
     private int amount;
+
 
     public Item(int nodeID, String productName, int amount) {
         this.nodeID = nodeID;
@@ -48,6 +46,6 @@ class Item implements Serializable {
 
     @Override
     public String toString() {
-        return "NodeID: " + nodeID + " | ProductID: " + productName + " | Amount: " + amount;
+        return "NodeID: " + nodeID + " ProductName: " + productName + ", Amount: " + amount;
     }
 }

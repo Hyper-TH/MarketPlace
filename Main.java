@@ -16,7 +16,7 @@ public class Main {
                 new Thread(new Seller()).start();
 
             } // End if
-            else if(user_input ==2) {
+            else if(user_input == 2) {
                 System.out.println("\nYou have chosen: Buyer.\t\n");
 
                 new Thread(new Buyer()).start();
