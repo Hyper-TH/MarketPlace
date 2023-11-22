@@ -179,30 +179,35 @@ public class Buyer implements Runnable {
     }
 
     private void sendMessageToSeller() {
-        
-        try (Scanner input = new Scanner(System.in)) {
-            isSending = true;
-
-            while (isSending) {
-
-                System.out.print("\nBuy Item (Press 'q' to Quit): ");
-                String message = input.nextLine();
-
-                if(message.equals("q")) {
-                    System.out.println("Thank you for shopping with us!");
-                    System.exit(0);
-                    break;
-                } else {
-                    // SellerNodeID Amount BuyerNodeID
-                    sendToSeller(message + " " + nodeID);
-                    isSending = false;
-                    break;
-                }
+        isSending = true;
+    
+        while (isSending) {
+            System.out.print("\nBuy Item (Press 'q' to Quit): ");
+    
+            // Read the entire line
+            String line = input.nextLine();
+    
+            // Split the line into parts (assuming space-separated values)
+            String[] parts = line.split(" ");
+    
+            if (parts.length >= 2 && parts[0].equals("q")) {
+                System.out.println("Thank you for shopping with us!");
+                System.exit(0);
+                break;
+            } else if (parts.length >= 2) {
+                // Assuming the first part is SellerNodeID and the second part is Amount
+                String message = parts[0] + " " + parts[1] + " " + nodeID;
+                
+                // SellerNodeID Amount BuyerNodeID
+                sendToSeller(message);
+                isSending = false;
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
+    
 
     private void sendToSeller(String message) {
         try {

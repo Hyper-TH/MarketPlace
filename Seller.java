@@ -138,17 +138,6 @@ public class Seller implements Runnable {
 
                     break;
                 }
-
-                // Have an if statement here that parses the message
-                // IF message == "<NODEID> <AMOUNT>"
-                //  sendToSeller
-                //  break; (i.e., it goes back to menu) || inputRunning = false
-                // ELSE
-                //  sout("Input incorrect. going back to menu || try again ")
-
-                // Send the user-input message to the seller
-                // If user wants to buy
-                // buyerID : sellerID amount
                 sendToSeller(Integer.toString(nodeID) + " : " + message);
 
             }
