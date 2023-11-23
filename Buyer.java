@@ -170,7 +170,12 @@ public class Buyer implements Runnable {
 
                         isReceiving = false;
                         break;
-                    } 
+                    }   else if (message.contains("Requested amount")) {
+                        System.out.println("Error making a transaction!");
+
+                        isReceiving = false;
+                        break;
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();

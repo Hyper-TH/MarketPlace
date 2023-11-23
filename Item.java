@@ -1,7 +1,3 @@
-import java.net.*;
-import java.io.*;
-import java.util.*;
-
 class Item {
     private static final long serialVersionUID = 42L;
 

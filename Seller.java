@@ -11,6 +11,15 @@ public class Seller implements Runnable {
     private static DatagramPacket inPacket, outPacket;
     private static byte[] buffer;
     private static int port = 7859;
+    private int broadcastTime = 0;
+    private volatile boolean isReceiving = true;
+    private volatile boolean isSending = true;
+    private boolean isRunning = true;
+
+    private int receivingCounter = 0;
+    private ArrayList<Item> itemList;
+    private static Scanner input = new Scanner(System.in);
+
 
     public int getCurrItem() {
         return currItem;
@@ -30,17 +39,7 @@ public class Seller implements Runnable {
         this.isBroadcasting = isBroadcasting;
     }
 
-    private int broadcastTime = 0;
-    private volatile boolean isReceiving = true;
-    private int receivingCounter = 0;
 
-    private ArrayList<Item> itemList;
-
-    // Shared Scanner for user input
-    private static Scanner input = new Scanner(System.in);
-
-    private boolean isRunning = true;
-    private boolean sendBool = true;
 
     public int getBroadcastTime() {
         return broadcastTime;
@@ -53,8 +52,14 @@ public class Seller implements Runnable {
     public Seller() {
 
         Random random = new Random();
+
         this.nodeID = random.nextInt(9000) + 1000;
         this.currItem = 0;
+        this.itemList = new ArrayList<>();
+        this.itemList.add(new Item(nodeID, "Potatoes", 5));
+        this.itemList.add(new Item(nodeID, "Oil", 8));
+        this.itemList.add(new Item(nodeID, "Flour", 12));
+        this.itemList.add(new Item(nodeID, "Sugar", 13));
 
         try {
             address = InetAddress.getByName("224.0.0.3");
@@ -69,20 +74,18 @@ public class Seller implements Runnable {
         }
 
         while(true) {
-            prePopulate();
             try {
-                menu();
+                sellerMenu();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
     }
     
-    private void menu() throws InterruptedException {
+    private void sellerMenu() throws InterruptedException {
         // Menu Option for Seller
         System.out.println("==== Menu: =====\t");
-        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale.\t\n3. Leave Market.");
+        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale. \t\n3. But an Item. \t\n4. Leave Market.");
 
         int choice = input.nextInt(); // Read user input
 
@@ -103,6 +106,7 @@ public class Seller implements Runnable {
                 getItems();
 
                 sendMessageToOtherSellers();
+                getReceipt();
                 break;
             case 4:
                 System.out.println("\nLeaving Market... Goodbye.\n");
@@ -123,27 +127,66 @@ public class Seller implements Runnable {
     }
 
     private void sendMessageToOtherSellers() {
-        
-        try (Scanner input = new Scanner(System.in)) {
-
-            // ASSUME PERFECT INPUT
-            while (sendBool) {
-
-                System.out.print("\nBuy Item (Enter 'exit' to Qqit): ");
-                String message = input.nextLine();
-
-                if(message.equals("q")) {
-                    System.out.println("Thank you for shopping with us!");
-                    sendBool = false;
-
-                    break;
-                }
-                sendToSeller(Integer.toString(nodeID) + " : " + message);
-
+        isSending = true;
+    
+        while (isSending) {
+            System.out.print("\nBuy Item (Press 'q' to Quit): ");
+    
+            // Read the entire line
+            String line = input.nextLine();
+    
+            // Split the line into parts (assuming space-separated values)
+            String[] parts = line.split(" ");
+    
+            if (parts.length >= 2 && parts[0].equals("q")) {
+                System.out.println("Thank you for shopping with us!");
+                System.exit(0);
+                break;
+            } else if (parts.length >= 2) {
+                // Assuming the first part is SellerNodeID and the second part is Amount
+                String message = parts[0] + " " + parts[1] + " " + nodeID;
+                
+                // SellerNodeID Amount BuyerNodeID
+                sendToSeller(message);
+                isSending = false;
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+    }
+
+    private void getReceipt() {
+        isReceiving = true;
+
+        while (isReceiving) { 
+            try {
+
+                buffer = new byte[1024];
+                inPacket = new DatagramPacket(buffer, buffer.length);
+
+                socket.receive(inPacket);
+
+                String message = new String(inPacket.getData(), 0, inPacket.getLength());
+                System.out.println(message);
+                synchronized (System.out) {
+                    if (message.contains(Integer.toString(nodeID)) && (message.contains("bought"))) {
+                        System.out.println(message);
+
+                        isReceiving = false;
+                        break;
+                    } else if (message.contains("Requested amount")) {
+                        System.out.println("Error making a transaction!");
+
+                        isReceiving = false;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }  
+    
     }
 
     private void sendToSeller(String message) {
@@ -177,17 +220,14 @@ public class Seller implements Runnable {
                 socket.receive(inPacket);
 
                 String message = new String(inPacket.getData(), 0, inPacket.getLength());
+                if (!message.contains(Integer.toString(nodeID))) {
+                    System.out.println(message);
 
-                // Have an if statement logic here that checks if this is a buyer message or not
-                // I.e., check message length (similar to the if statements in receiveMessages in seller)
-                System.out.println(message);
+                    receivingCounter += 1;  
+                }
 
-                receivingCounter += 1;
-                System.out.println("Current counter: " + receivingCounter);
-
-                // Exit loop after receiving two items
-                if (receivingCounter == 2) {
-                    System.out.println("Counter: " + receivingCounter);
+                // Exit loop after receiving 5 items
+                if (receivingCounter == 5) {
 
                     isReceiving = false;
                     break;
@@ -207,9 +247,7 @@ public class Seller implements Runnable {
         new Thread(() -> {
             while (true) {
                 try {
-                    // This also receives messages from other sellers, 
-                    // we should probably rename this function to receiveMessages()
-                    receiveMessages();
+                    receiveMessages();  // This also receives messages from other sellers
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -247,15 +285,6 @@ public class Seller implements Runnable {
         }
     }   // end sendItemsOnSale()
 
-
-    private void prePopulate(){
-        
-        this.itemList = new ArrayList<>();
-        this.itemList.add(new Item(nodeID, "Potatoes", 5));
-        this.itemList.add(new Item(nodeID, "Oil", 8));
-        this.itemList.add(new Item(nodeID, "Flour", 12));
-        this.itemList.add(new Item(nodeID, "Sugar", 13));
-    }
 
     @Override
     public void run() {
@@ -313,8 +342,6 @@ public class Seller implements Runnable {
                 System.out.println("Buyer bought something from you!");
             } 
 
-            // TODO: Receiving from other sellers!
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -334,7 +361,7 @@ public class Seller implements Runnable {
 
     private void sendError(){
         try {
-            String message =  "Cannot make transaction due to insufficient Seller Amount!";
+            String message =  "Requested amount from user is greater than our stock!";
             byte[] buffer = message.getBytes();
     
             outPacket = new DatagramPacket(buffer, buffer.length, address, port);
@@ -369,20 +396,16 @@ public class Seller implements Runnable {
             sendError();
         }
         else {
-            System.out.println("Entered else");
 
             // Subtract reduceAmount from the current amount
             int updatedAmount = currentAmount - reduceAmount;
         
-            System.out.println("Updated amount: " + updatedAmount);
 
             // Ensure the updated amount is not negative
             updatedAmount = Math.max(updatedAmount, 0);
         
             // Update the amount of the items
             itemToUpdate.setAmount(updatedAmount);
-
-            System.out.println("New amount: " + itemToUpdate.getAmount());
 
             System.out.println("Products have been updated!");
 
