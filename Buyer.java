@@ -149,19 +149,21 @@ public class Buyer implements Runnable {
 
     private void sendMessageToSeller() {
         isSending = true;
-    
+        System.out.print("Buy Item (Press 'q' to Quit): ");
+
         while (isSending) {
-            System.out.print("\nBuy Item (Press 'q' to Quit): ");
-    
-            // Read the entire line
+            // Consume any extra newline characters
+            input.nextLine();
+
             String line = input.nextLine();
-    
+
             // Split the line into parts (assuming space-separated values)
             String[] parts = line.split(" ");
-    
+
             if (parts.length >= 2 && parts[0].equals("q")) {
                 System.out.println("Thank you for shopping with us!");
                 System.exit(0);
+
                 break;
             } else if (parts.length >= 2) {
                 // Assuming the first part is SellerNodeID and the second part is Amount
@@ -176,6 +178,7 @@ public class Buyer implements Runnable {
             } else {
                 System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
             }
+
         }
     }
     
