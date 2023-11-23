@@ -4,19 +4,19 @@ import java.util.*;
 
 public class Buyer implements Runnable {
 
-    // This nodeID will be needed, for the receipt 
-    // i.e., Seller will broadcast the receipt, check the receipt if it contains this nodeID, then get it
     private int nodeID;
 
     private static MulticastSocket socket;
     private static InetAddress address;
     private static DatagramPacket inPacket, outPacket;
+
     private static byte[] buffer;
     private static int port = 7859;
 
     private volatile boolean isRunning = true;
     private volatile boolean isReceiving = true;
     private volatile boolean isSending = true;
+
     private int receivingCounter = 0;
 
     public boolean isRunning() {
@@ -27,12 +27,8 @@ public class Buyer implements Runnable {
         this.isRunning = isRunning;
     }
 
-
     // Shared Scanner for user input
     private static Scanner input = new Scanner(System.in);
-
-    // Probably don't need this, Buyer doesn't need a shopping basket, they can use their arms for carrying bought items
-    // private ArrayList<Item> buyers = new ArrayList<>();
 
     public Buyer() {
 
@@ -90,6 +86,7 @@ public class Buyer implements Runnable {
                 case 1:
                     // Display current items on sale
                     System.out.println("Getting items for sale now from buyers....");
+
                     getItems(); // Infinite loop
                     break;
                 case 2:
@@ -98,6 +95,7 @@ public class Buyer implements Runnable {
 
                     sendMessageToSeller();
                     getReceiptFromSeller();
+
                     break;  
                 case 3:
                     // Leave Market
@@ -105,16 +103,16 @@ public class Buyer implements Runnable {
                     
                     setRunning(false);
                     System.exit(0);
+
                     break;
                 default:
                     System.out.println("\nCould not read input. Please Try Again.\n");
+
                     break;
             }
         }
     }
 
-    // Another bug might be produced here:
-    // When other buyers are trying to buy, this buyer might see other buyer messages as well
     private void getItems() {
         isReceiving = true;
         receivingCounter = 0;
@@ -147,7 +145,57 @@ public class Buyer implements Runnable {
         }   
     } // end getItems()
 
-    // Check if it's from other buyers
+    private void sendMessageToSeller() {
+        isSending = true;
+    
+        while (isSending) {
+            System.out.print("\nBuy Item (Press 'q' to Quit): ");
+    
+            // Read the entire line
+            String line = input.nextLine();
+    
+            // Split the line into parts (assuming space-separated values)
+            String[] parts = line.split(" ");
+    
+            if (parts.length >= 2 && parts[0].equals("q")) {
+                System.out.println("Thank you for shopping with us!");
+                System.exit(0);
+                break;
+            } else if (parts.length >= 2) {
+                // Assuming the first part is SellerNodeID and the second part is Amount
+                String message = parts[0] + " " + parts[1] + " " + nodeID;
+                
+                // SellerNodeID Amount BuyerNodeID
+                sendToSeller(message);
+
+                isSending = false;
+                
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
+            }
+        }
+    }
+    
+
+    private void sendToSeller(String message) {
+        try {
+            // Specify the seller's address and port
+            InetAddress sellerAddress = InetAddress.getByName("224.0.0.3");
+            int sellerPort = 7859;
+
+            // Convert the message to bytes
+            byte[] messageBytes = message.getBytes();
+
+            // Create a DatagramPacket with the message and send it to the seller
+            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, sellerAddress, sellerPort);
+            socket.send(packet);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void getReceiptFromSeller() {
         isReceiving = true;
 
@@ -180,55 +228,6 @@ public class Buyer implements Runnable {
         }   
     }
 
-    private void sendMessageToSeller() {
-        isSending = true;
-    
-        while (isSending) {
-            System.out.print("\nBuy Item (Press 'q' to Quit): ");
-    
-            // Read the entire line
-            String line = input.nextLine();
-    
-            // Split the line into parts (assuming space-separated values)
-            String[] parts = line.split(" ");
-    
-            if (parts.length >= 2 && parts[0].equals("q")) {
-                System.out.println("Thank you for shopping with us!");
-                System.exit(0);
-                break;
-            } else if (parts.length >= 2) {
-                // Assuming the first part is SellerNodeID and the second part is Amount
-                String message = parts[0] + " " + parts[1] + " " + nodeID;
-                
-                // SellerNodeID Amount BuyerNodeID
-                sendToSeller(message);
-                isSending = false;
-                break;
-            } else {
-                System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
-            }
-        }
-    }
-    
-
-    private void sendToSeller(String message) {
-        try {
-            // Specify the seller's address and port
-            InetAddress sellerAddress = InetAddress.getByName("224.0.0.3");
-            int sellerPort = 7859;
-
-            // Convert the message to bytes
-            byte[] messageBytes = message.getBytes();
-
-            // Create a DatagramPacket with the message and send it to the seller
-            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, sellerAddress, sellerPort);
-            socket.send(packet);
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void run() {
         System.out.println("Buyer nodeID: " + nodeID);
@@ -241,7 +240,6 @@ public class Buyer implements Runnable {
             socket.close();
         }
     }
-
 
     public static void main(String[] args) {
         new Thread(new Buyer()).start();

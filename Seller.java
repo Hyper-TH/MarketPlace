@@ -6,18 +6,24 @@ public class Seller implements Runnable {
 
     private int nodeID;
     private int currItem;
+
     private static MulticastSocket socket;
     private static InetAddress address;
     private static DatagramPacket inPacket, outPacket;
+
     private static byte[] buffer;
     private static int port = 7859;
-    private int broadcastTime = 0;
+    
     private volatile boolean isReceiving = true;
     private volatile boolean isSending = true;
     private boolean isRunning = true;
 
     private int receivingCounter = 0;
+    private int broadcastTime = 0;
+    private volatile boolean isBroadcasting = true;
+
     private ArrayList<Item> itemList;
+
     private static Scanner input = new Scanner(System.in);
 
 
@@ -29,7 +35,6 @@ public class Seller implements Runnable {
         this.currItem = currItem;
     }
 
-    private volatile boolean isBroadcasting = true;
 
     public boolean isBroadcasting() {
         return isBroadcasting;
@@ -38,7 +43,6 @@ public class Seller implements Runnable {
     public void setBroadcasting(boolean isBroadcasting) {
         this.isBroadcasting = isBroadcasting;
     }
-
 
 
     public int getBroadcastTime() {
@@ -86,7 +90,7 @@ public class Seller implements Runnable {
     private void sellerMenu() throws InterruptedException {
         // Menu Option for Seller
         System.out.println("==== Menu: =====\t");
-        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale. \t\n3. Current Item on Sale \t\n4. But an Item. \t\n5. Leave Market.");
+        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale. \t\n3. Current Item on Sale \t\n4. Buy an Item. \t\n5. Leave Market.");
 
         int choice = input.nextInt(); // Read user input
 
@@ -94,18 +98,22 @@ public class Seller implements Runnable {
             case 1:
                 // Show all Items
                 System.out.println("\n==== Current Items: =====\n");
+
                 showAllItems(); // Show seller's current items
+
                 break;
             case 2:
                 // Broadcast Items on Sale 
                 System.out.println("\n==== Broadcast Items: ====\n");   // This will only broadcast for 20 seconds
 
                 sendItemsOnSale();  
+
                 break;
             case 3:
                 // Show current Item on sale
                 Item currentItem = itemList.get(getCurrItem());
-                System.out.println(currentItem);
+
+                System.out.println("Current item on sale: " + currentItem);
 
                 break;
             case 4: 
@@ -114,22 +122,23 @@ public class Seller implements Runnable {
 
                 sendMessageToOtherSellers();
                 getReceiptFromBuyer();
+
                 break;
             case 5:
                 System.out.println("\nLeaving Market... Goodbye.\n");
                 System.exit(0);
+
                 break;
             default:
                 System.out.println("\nCould not read input. Please Try Again.\n");
+
                 break;
         } // End switch
     }
 
     private void showAllItems() throws InterruptedException{
         for (Item item : itemList) {
-            System.out.println("NodeID: " + item.getNodeID() +
-                    "| ProductID: " + item.getProductName() +
-                    "| Amount: " + item.getAmount() + "\n");
+            System.out.println(item);
         }
     }
 
@@ -145,17 +154,21 @@ public class Seller implements Runnable {
             // Split the line into parts (assuming space-separated values)
             String[] parts = line.split(" ");
     
+            // If user chooses to exit
             if (parts.length >= 2 && parts[0].equals("q")) {
                 System.out.println("Thank you for shopping with us!");
                 System.exit(0);
+
                 break;
-            } else if (parts.length >= 2) {
-                // Assuming the first part is SellerNodeID and the second part is Amount
+            } 
+            // User inputs <NODEID> <AMOUNT>
+            else if (parts.length >= 2) {
                 String message = parts[0] + " " + parts[1] + " " + nodeID;
                 
                 // SellerNodeID Amount BuyerNodeID
                 sendToSeller(message);
                 isSending = false;
+
                 break;
             } else {
                 System.out.println("Invalid input. Please enter SellerNodeID and Amount separated by a space.");
@@ -175,7 +188,6 @@ public class Seller implements Runnable {
                 socket.receive(inPacket);
 
                 String message = new String(inPacket.getData(), 0, inPacket.getLength());
-                // System.out.println(message);
 
                 synchronized (System.out) {
                     if (message.contains(Integer.toString(nodeID)) && (message.contains("bought"))) {
@@ -183,7 +195,9 @@ public class Seller implements Runnable {
 
                         isReceiving = false;
                         break;
-                    } else if (message.contains("Requested amount")) {
+                    } 
+                    // If transaction was not successful (i.e., receives error message)
+                    else if (message.contains("Requested amount")) {
                         System.out.println("Error making a transaction!");
 
                         isReceiving = false;
@@ -194,20 +208,18 @@ public class Seller implements Runnable {
                 e.printStackTrace();
             }
         }  
-    
     }
 
     private void sendToSeller(String message) {
         try {
             // Specify the seller's address and port
             InetAddress sellerAddress = InetAddress.getByName("224.0.0.3");
-            int sellerPort = 7859;
 
             // Convert the message to bytes
             byte[] messageBytes = message.getBytes();
 
             // Create a DatagramPacket with the message and send it to the seller
-            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, sellerAddress, sellerPort);
+            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, sellerAddress, port);
             socket.send(packet);
 
         } catch (IOException e) {
@@ -247,11 +259,13 @@ public class Seller implements Runnable {
         }   
     } // end getItems()
 
+    // Broadcast items
     private void sendItemsOnSale() {  
         setBroadcasting(true);
+
         int currentItemIndex = 0;
 
-        // This is good, leave it as it is from now
+        // Listen while broadcasting
         new Thread(() -> {
             while (true) {
                 try {
@@ -262,56 +276,57 @@ public class Seller implements Runnable {
             }
         }).start();
         
+        // Note that every seller can only broadcast their items for 20 seconds max
+        // Items are switched every 60 seconds
         while (isBroadcasting) {
 
             // Broadcast current items to buyers in the multicast group
             // Only send it if the amount is greater than 0
             if ((itemList.get(currentItemIndex)).getAmount() > 0) {
+                
+                // Show seller time left for broadcasting
                 System.out.println("Broadcasting time left: " + (60 - broadcastTime));
+
+                // Broadcast the item
                 sendItems(itemList.get(currentItemIndex));
+
                 try {
                     Thread.sleep(1000); // Sleep for 1 seconds before sending the next message
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 // currItem is for update()
                 setCurrItem(currentItemIndex);
-            } else if ((itemList.get(currentItemIndex)).getAmount() == 0) {
+
+            } 
+            // If the amount of current item index is 0, move to the next item!
+            else if ((itemList.get(currentItemIndex)).getAmount() == 0) {
                 System.out.println("Current Item sold out, moving to the next item!");
+
                 currentItemIndex = (currentItemIndex + 1) % itemList.size();
             }
 
+            // Append broadcastTime
             broadcastTime += 1;
 
+            // Once broadcast time reaches 60 (i.e., item has been sold for 60 seconds)
             if (broadcastTime == 61) {
                 // This ensures that the currentIndex goes on a loop, iterating base of the size of the array
                 currentItemIndex = (currentItemIndex + 1) % itemList.size();
 
                 setBroadcastTime(0);
-            } else if (broadcastTime % 20 == 0 || broadcastTime == 60) {
+            } 
+            // If broadcast time has reached 20 seconds/60 seconds
+            else if (broadcastTime % 20 == 0 || broadcastTime == 60) {
                 System.out.println("Broadcasting stopped!");
 
                 setBroadcasting(false);
+
                 break;
             }
         }
     }   // end sendItemsOnSale()
-
-
-    @Override
-    public void run() {
-
-        System.out.println("Seller nodeID: " + nodeID);
-        while (isRunning) {
-        
-            setBroadcastTime(0);
-            
-        }
-        // Optionally, close the socket when leaving the market
-        if (!socket.isClosed()) {
-            socket.close();
-        }
-    }
 
     private void sendItems(Item item) {
         try {
@@ -333,7 +348,6 @@ public class Seller implements Runnable {
             inPacket = new DatagramPacket(buffer, buffer.length);
             socket.receive(inPacket);
 
-            // Extract nodeID from the received message
             String message = new String(inPacket.getData(), 0, inPacket.getLength());
 
             // If message is not a broadcasted item from other sellers 
@@ -426,6 +440,20 @@ public class Seller implements Runnable {
         }
 
     }
+    
+    @Override
+    public void run() {
+
+        System.out.println("Seller nodeID: " + nodeID);
+        while (isRunning) {
+            setBroadcastTime(0);
+        }
+        // Optionally, close the socket when leaving the market
+        if (!socket.isClosed()) {
+            socket.close();
+        }
+    }
+
     public static void main(String[] args) {
         new Thread(new Seller()).start();
     }
