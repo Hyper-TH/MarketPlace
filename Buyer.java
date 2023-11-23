@@ -129,16 +129,13 @@ public class Buyer implements Runnable {
 
                 String message = new String(inPacket.getData(), 0, inPacket.getLength());
 
-                // Have an if statement logic here that checks if this is a buyer message or not
-                // I.e., check message length (similar to the if statements in receiveMessages in seller)
                 if (message.contains("ProductName")) {
                     System.out.println(message);
 
                     receivingCounter += 1;
                 }
-                // Exit loop after receiving two items
-                if (receivingCounter == 2) {
-                    System.out.println("Counter: " + receivingCounter);
+                // Exit loop after receiving 5 items
+                if (receivingCounter == 5) {
 
                     isReceiving = false;
                     break;
