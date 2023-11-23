@@ -144,10 +144,12 @@ public class Seller implements Runnable {
 
     private void sendMessageToOtherSellers() {
         isSending = true;
-    
+        System.out.print("\nBuy Item (Press 'q' to Quit): ");
+
         while (isSending) {
-            System.out.print("\nBuy Item (Press 'q' to Quit): ");
-    
+            // Consume any extra newline characters
+            input.nextLine();
+            
             // Read the entire line
             String line = input.nextLine();
     
