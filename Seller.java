@@ -85,7 +85,7 @@ public class Seller implements Runnable {
     private void sellerMenu() throws InterruptedException {
         // Menu Option for Seller
         System.out.println("==== Menu: =====\t");
-        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale. \t\n3. But an Item. \t\n4. Leave Market.");
+        System.out.println("1. Show All Items. \t\n2. Broadcast items on Sale. \t\n3. Current Item on Sale \t\n4. But an Item. \t\n5. Leave Market.");
 
         int choice = input.nextInt(); // Read user input
 
@@ -96,19 +96,25 @@ public class Seller implements Runnable {
                 showAllItems(); // Show seller's current items
                 break;
             case 2:
-                // Show Items on Sale 
+                // Broadcast Items on Sale 
                 System.out.println("\n==== Broadcast Items: ====\n");   // This will only broadcast for 20 seconds
 
                 sendItemsOnSale();  
                 break;
-            case 3: 
+            case 3:
+                // Show current Item on sale
+                Item currentItem = itemList.get(getCurrItem());
+                System.out.println(currentItem);
+
+                break;
+            case 4: 
                 System.out.println("\n==== Buy an Item: ====\n");
                 getItems();
 
                 sendMessageToOtherSellers();
                 getReceipt();
                 break;
-            case 4:
+            case 5:
                 System.out.println("\nLeaving Market... Goodbye.\n");
                 System.exit(0);
                 break;
@@ -259,6 +265,7 @@ public class Seller implements Runnable {
             // Broadcast current items to buyers in the multicast group
             // Only send it if the amount is greater than 0
             if ((itemList.get(currentItemIndex)).getAmount() > 0) {
+                System.out.println("Broadcasting time left: " + (20 - broadcastTime));
                 sendItems(itemList.get(currentItemIndex));
                 try {
                     Thread.sleep(1000); // Sleep for 1 seconds before sending the next message
@@ -267,8 +274,11 @@ public class Seller implements Runnable {
                 }
                 // currItem is for update()
                 setCurrItem(currentItemIndex);
+            } else if ((itemList.get(currentItemIndex)).getAmount() == 0) {
+                System.out.println("Current Item sold out, moving to the next item!");
+                currentItemIndex = (currentItemIndex + 1) % itemList.size();
             }
-            
+
             broadcastTime += 1;
 
             if (broadcastTime == 61) {
