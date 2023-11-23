@@ -3,7 +3,8 @@ import java.util.Scanner;
 public class Main {
     public static void main(String argv[]) {
 
-        System.out.println("Choose Which Thread to Start:");
+        System.out.println("Entering the digital market place...");
+        System.out.println("Please enter the appropriate login:");
         System.out.println("1 - Seller");
         System.out.println("2 - Buyer");
 
@@ -11,19 +12,19 @@ public class Main {
             int user_input = scan.nextInt();
 
             if(user_input == 1) {
-                System.out.println("\nYou have chosen: Seller.\t\n");
+                System.out.println("\nLogged in as Seller.\t\n");
 
                 new Thread(new Seller()).start();
 
             } // End if
             else if(user_input == 2) {
-                System.out.println("\nYou have chosen: Buyer.\t\n");
+                System.out.println("\nLogged in as a Buyer.\t\n");
 
                 new Thread(new Buyer()).start();
 
             }// End else if
             else {
-                System.out.println("Unknown Input. Please Try again!");   
+                System.out.println("Unkown login input, please try again:");   
                 
             } // End else
         }// End try
