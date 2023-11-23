@@ -55,11 +55,12 @@ public class Seller implements Runnable {
 
         this.nodeID = random.nextInt(9000) + 1000;
         this.currItem = 0;
+
         this.itemList = new ArrayList<>();
-        this.itemList.add(new Item(nodeID, "Potatoes", 5));
-        this.itemList.add(new Item(nodeID, "Oil", 8));
-        this.itemList.add(new Item(nodeID, "Flour", 12));
-        this.itemList.add(new Item(nodeID, "Sugar", 13));
+        this.itemList.add(new Item(nodeID, "Potatoes", random.nextInt(20) + 1));
+        this.itemList.add(new Item(nodeID, "Oil", random.nextInt(20) + 1));
+        this.itemList.add(new Item(nodeID, "Flour", random.nextInt(20) + 1));
+        this.itemList.add(new Item(nodeID, "Sugar", random.nextInt(20) + 1));
 
         try {
             address = InetAddress.getByName("224.0.0.3");
@@ -174,7 +175,8 @@ public class Seller implements Runnable {
                 socket.receive(inPacket);
 
                 String message = new String(inPacket.getData(), 0, inPacket.getLength());
-                System.out.println(message);
+                // System.out.println(message);
+
                 synchronized (System.out) {
                     if (message.contains(Integer.toString(nodeID)) && (message.contains("bought"))) {
                         System.out.println(message);
@@ -265,7 +267,7 @@ public class Seller implements Runnable {
             // Broadcast current items to buyers in the multicast group
             // Only send it if the amount is greater than 0
             if ((itemList.get(currentItemIndex)).getAmount() > 0) {
-                System.out.println("Broadcasting time left: " + (20 - broadcastTime));
+                System.out.println("Broadcasting time left: " + (60 - broadcastTime));
                 sendItems(itemList.get(currentItemIndex));
                 try {
                     Thread.sleep(1000); // Sleep for 1 seconds before sending the next message
@@ -311,7 +313,6 @@ public class Seller implements Runnable {
         }
     }
 
-    // This is good, we will leave this alone for now
     private void sendItems(Item item) {
         try {
             String message = item + "\nNodeID of seller: " + nodeID;
@@ -337,7 +338,8 @@ public class Seller implements Runnable {
 
             // If message is not a broadcasted item from other sellers 
             // and the message is intended for the seller
-            if (!(message.contains("ProductName")) && extractNodeIDFromBuyer(message)) {
+            // and the message is not a receipt
+            if (!(message.contains("ProductName")) && extractNodeIDFromBuyer(message) && !(message.contains("bought"))) {
 
                 // Stop the broadcast!
                 setBroadcasting(false);
@@ -349,7 +351,6 @@ public class Seller implements Runnable {
 
                 updateItems(Integer.parseInt(amount), buyerNodeID);
 
-                System.out.println("Buyer bought something from you!");
             } 
 
         } catch (IOException e) {
@@ -389,7 +390,9 @@ public class Seller implements Runnable {
     
             outPacket = new DatagramPacket(buffer, buffer.length, address, port);
             socket.send(outPacket);
-        
+            
+            System.out.println(message);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -417,7 +420,6 @@ public class Seller implements Runnable {
             // Update the amount of the items
             itemToUpdate.setAmount(updatedAmount);
 
-            System.out.println("Products have been updated!");
 
             // send Receipt to Seller
             sendReceiptToBuyer(itemToUpdate.getProductName(), reduceAmount, buyerNodeID);
