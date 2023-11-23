@@ -97,7 +97,7 @@ public class Buyer implements Runnable {
                     getItems(); // Have it so that it only runs for 10 seconds (i.e., listen for 10 seconds)
 
                     sendMessageToSeller();
-                    getReceipt();
+                    getReceiptFromBuyerFromBuyer();
                     break;  
                 case 3:
                     // Leave Market
@@ -148,7 +148,7 @@ public class Buyer implements Runnable {
     } // end getItems()
 
     // Check if it's from other buyers
-    private void getReceipt() {
+    private void getReceiptFromBuyerFromBuyer() {
         isReceiving = true;
 
         while (isReceiving) { 
@@ -235,7 +235,6 @@ public class Buyer implements Runnable {
 
         while (isRunning) {
                 
-
         }
         // Optionally, close the socket when leaving the market
         if (!socket.isClosed()) {

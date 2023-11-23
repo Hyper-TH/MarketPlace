@@ -112,7 +112,7 @@ public class Seller implements Runnable {
                 getItems();
 
                 sendMessageToOtherSellers();
-                getReceipt();
+                getReceiptFromBuyer();
                 break;
             case 5:
                 System.out.println("\nLeaving Market... Goodbye.\n");
@@ -162,7 +162,7 @@ public class Seller implements Runnable {
         }
     }
 
-    private void getReceipt() {
+    private void getReceiptFromBuyer() {
         isReceiving = true;
 
         while (isReceiving) { 
@@ -369,7 +369,7 @@ public class Seller implements Runnable {
         }
     }
 
-    private void sendError(){
+    private void sendErrorToBuyer() {
         try {
             String message =  "Requested amount from user is greater than our stock!";
             byte[] buffer = message.getBytes();
@@ -382,7 +382,7 @@ public class Seller implements Runnable {
         }
     }
 
-    private void sendReceipt(String item, int amount, String buyerNodeID){
+    private void sendReceiptToBuyer(String item, int amount, String buyerNodeID){
         try {
             String message = buyerNodeID + " bought " + amount + " of " + item + " from " + nodeID;
             byte[] buffer = message.getBytes();
@@ -403,7 +403,7 @@ public class Seller implements Runnable {
         int currentAmount = itemToUpdate.getAmount();
 
         if(currentAmount < reduceAmount) {
-            sendError();
+            sendErrorToBuyer();
         }
         else {
 
@@ -420,7 +420,7 @@ public class Seller implements Runnable {
             System.out.println("Products have been updated!");
 
             // send Receipt to Seller
-            sendReceipt(itemToUpdate.getProductName(), reduceAmount, buyerNodeID);
+            sendReceiptToBuyer(itemToUpdate.getProductName(), reduceAmount, buyerNodeID);
         }
 
     }
