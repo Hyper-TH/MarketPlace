@@ -26,7 +26,6 @@ public class Seller implements Runnable {
 
     private static Scanner input = new Scanner(System.in);
 
-
     public int getCurrItem() {
         return currItem;
     }
@@ -136,6 +135,7 @@ public class Seller implements Runnable {
         } // End switch
     }
 
+    // This shows all the items that the seller has
     private void showAllItems() throws InterruptedException{
         for (Item item : itemList) {
             System.out.println(item);
@@ -341,7 +341,6 @@ public class Seller implements Runnable {
         }
     }
     
-
     private void receiveMessages() throws InterruptedException {
         try {
             buffer = new byte[1024];

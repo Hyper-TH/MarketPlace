@@ -57,7 +57,7 @@ public class Buyer implements Runnable {
             case 1:
                 // Join Market
                 System.out.println("\n==== Joined Market ====\n");
-                // new Thread(() -> receiveTimeAndItemsFromSellers()).start();
+
                 displayBuyerMenu();
                 break;
             case 2:
@@ -87,11 +87,12 @@ public class Buyer implements Runnable {
                     // Display current items on sale
                     System.out.println("Getting items for sale now from buyers....");
 
-                    getItems(); // Infinite loop
+                    getItems(); 
+                    
                     break;
                 case 2:
                     System.out.println("Getting items for sale now from buyers....");
-                    getItems(); // Have it so that it only runs for 10 seconds (i.e., listen for 10 seconds)
+                    getItems(); 
 
                     sendMessageToSeller();
                     getReceiptFromSeller();
@@ -132,6 +133,7 @@ public class Buyer implements Runnable {
 
                     receivingCounter += 1;
                 }
+
                 // Exit loop after receiving 5 items
                 if (receivingCounter == 5) {
 
@@ -231,11 +233,7 @@ public class Buyer implements Runnable {
     @Override
     public void run() {
         System.out.println("Buyer nodeID: " + nodeID);
-
-        while (isRunning) {
-                
-        }
-        // Optionally, close the socket when leaving the market
+        
         if (!socket.isClosed()) {
             socket.close();
         }
@@ -243,5 +241,5 @@ public class Buyer implements Runnable {
 
     public static void main(String[] args) {
         new Thread(new Buyer()).start();
-    } // End of main
+    } 
 }
