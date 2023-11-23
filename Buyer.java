@@ -97,7 +97,7 @@ public class Buyer implements Runnable {
                     getItems(); // Have it so that it only runs for 10 seconds (i.e., listen for 10 seconds)
 
                     sendMessageToSeller();
-                    getReceiptFromBuyerFromBuyer();
+                    getReceiptFromSeller();
                     break;  
                 case 3:
                     // Leave Market
@@ -107,7 +107,7 @@ public class Buyer implements Runnable {
                     System.exit(0);
                     break;
                 default:
-                    System.out.println("\nCould not read input. Please Tryd Again.\n");
+                    System.out.println("\nCould not read input. Please Try Again.\n");
                     break;
             }
         }
@@ -148,7 +148,7 @@ public class Buyer implements Runnable {
     } // end getItems()
 
     // Check if it's from other buyers
-    private void getReceiptFromBuyerFromBuyer() {
+    private void getReceiptFromSeller() {
         isReceiving = true;
 
         while (isReceiving) { 
